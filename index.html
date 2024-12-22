@@ -103,14 +103,18 @@
     });
 
     // Start the metronome
-    document.getElementById("startMetronome").addEventListener("click", startMetronome);
+    document.getElementById("startMetronome").addEventListener("click", () => {
+  if (interval) return; // Prevent multiple intervals
 
-    function startMetronome() {
-      if (interval) return; // Prevent multiple intervals
-      lastBeatTime = Date.now();
-      playMetronome();
-      interval = setInterval(playMetronome, beatInterval);
-    }
+  // Play sound once to enable it
+  metronomeSound.play().catch((error) => {
+    console.log("User interaction required to play sound:", error);
+  });
+
+  lastBeatTime = Date.now();
+  playMetronome();
+  interval = setInterval(playMetronome, beatInterval);
+});
 
     // Stop the metronome
     document.getElementById("stopMetronome").addEventListener("click", () => {
