@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Metronome Timing App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    .button {
+      padding: 15px 30px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .indicator {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      margin: 20px auto;
+    }
+    #log {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+    .log-entry {
+      font-size: 14px;
+      margin: 5px 0;
+    }
+    #bpmInput {
+      width: 80px;
+      text-align: center;
+      font-size: 18px;
+      margin: 10px;
+    }
+    select {
+      font-size: 18px;
+      padding: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Metronome Timing App</h1>
+  
+  <div>
+    <label for="bpmInput">BPM:</label>
+    <input type="number" id="bpmInput" value="60" min="20" max="300">
+    <button id="setBpm" class="button">Set BPM</button>
+  </div>
+
+  <div>
+    <label for="soundSelect">Metronome Sound:</label>
+    <select id="soundSelect">
+      <option value="https://www.soundjay.com/button/beep-07.wav">Beep</option>
+      <option value="https://www.soundjay.com/button/beep-09.wav">Click</option>
+      <option value="https://www.soundjay.com/button/beep-10.wav">Ping</option>
+    </select>
+  </div>
+  
+  <br>
+  <button id="startMetronome" class="button">Start Metronome</button>
+  <button id="stopMetronome" class="button">Stop Metronome</button>
+  <br><br>
+  <button id="clickButton" class="button">Click to Test Timing</button>
+  <div id="feedback" class="indicator"></div>
+  
+  <h2>Timing Log</h2>
+  <div id="log"></div>
+
+  <script>
+    let interval;
+    let bpm = 60; // beats per minute
+    let beatInterval = 60000 / bpm; // milliseconds per beat
+    let lastBeatTime;
+    let log = [];
+    const maxLogEntries = 1000;
+
+    const feedbackDiv = document.getElementById("feedback");
+    const logDiv = document.getElementById("log");
+    const bpmInput = document.getElementById("bpmInput");
+    const soundSelect = document.getElementById("soundSelect");
+
+    let metronomeSound = new Audio(soundSelect.value);
+
+    // Update BPM
+    document.getElementById("setBpm").addEventListener("click", () => {
+      bpm = parseInt(bpmInput.value, 10) || 60;
+      beatInterval = 60000 / bpm;
+      if (interval) {
+        clearInterval(interval);
+        startMetronome();
+      }
+    });
+
+    // Change metronome sound
+    soundSelect.addEventListener("change", () => {
+      metronomeSound = new Audio(soundSelect.value);
+    });
+
+    // Start the metronome
+    document.getElementById("startMetronome").addEventListener("click", startMetronome);
+
+    function startMetronome() {
+      if (interval) return; // Prevent multiple intervals
+      lastBeatTime = Date.now();
+      playMetronome();
+      interval = setInterval(playMetronome, beatInterval);
+    }
+
+    // Stop the metronome
+    document.getElementById("stopMetronome").addEventListener("click", () => {
+      clearInterval(interval);
+      interval = null;
+    });
+
+    // Play metronome sound
+    function playMetronome() {
+      lastBeatTime = Date.now();
+      metronomeSound.currentTime = 0;
+      metronomeSound.play();
+    }
+
+    // Handle button click
+    document.getElementById("clickButton").addEventListener("click", () => {
+      const clickTime = Date.now();
+      const diff = Math.abs(clickTime - lastBeatTime);
+
+      // Calculate timing offset
+      const offset = diff % beatInterval;
+      const distanceFromBeat = Math.min(offset, beatInterval - offset) / 1000; // convert to seconds
+
+      // Update feedback
+      if (distanceFromBeat <= 0.02) {
+        feedbackDiv.style.backgroundColor = "green";
+      } else if (distanceFromBeat <= 0.04) {
+        feedbackDiv.style.backgroundColor = "yellow";
+      } else {
+        feedbackDiv.style.backgroundColor = "red";
+      }
+
+      // Log the result
+      log.push(distanceFromBeat.toFixed(3) + "s");
+      if (log.length > maxLogEntries) log.shift(); // Keep log size to 1000 entries
+      updateLog();
+      saveLog();
+    });
+
+    // Update log display
+    function updateLog() {
+      logDiv.innerHTML = "";
+      log.slice(-10).forEach((entry, index) => {
+        const div = document.createElement("div");
+        div.className = "log-entry";
+        div.textContent = `${index + 1}: ${entry}`;
+        logDiv.appendChild(div);
+      });
+    }
+
+    // Save log to local storage
+    function saveLog() {
+      localStorage.setItem("timingLog", JSON.stringify(log));
+    }
+
+    // Load log from local storage
+    function loadLog() {
+      const savedLog = JSON.parse(localStorage.getItem("timingLog"));
+      if (savedLog) {
+        log = savedLog.slice(0, maxLogEntries);
+        updateLog();
+      }
+    }
+
+    // Load log on page load
+    loadLog();
+  </script>
+</body>
+</html>
