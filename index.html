@@ -80,10 +80,16 @@
 
     // Ensure audio playback works on user interaction
     function enableAudio() {
-      metronomeSound.play().catch((error) => {
-        console.log("Audio enabled after user interaction:", error);
-      });
-    }
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+function playBeep() {
+  const oscillator = audioContext.createOscillator();
+  oscillator.type = "sine"; // Waveform type
+  oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // Frequency in Hz
+  oscillator.connect(audioContext.destination);
+  oscillator.start();
+  oscillator.stop(audioContext.currentTime + 0.1); // Play for 0.1 seconds
+}
 
     // Update BPM
     document.getElementById("setBpm").addEventListener("click", () => {
