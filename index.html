@@ -52,15 +52,6 @@
     <input type="number" id="bpmInput" value="60" min="20" max="300">
     <button id="setBpm" class="button">Set BPM</button>
   </div>
-
-  <div>
-    <label for="soundSelect">Metronome Sound:</label>
-    <select id="soundSelect">
-      <option value="https://www.soundjay.com/button/beep-07.wav">Beep</option>
-      <option value="https://www.soundjay.com/button/beep-09.wav">Click</option>
-      <option value="https://www.soundjay.com/button/beep-10.wav">Ping</option>
-    </select>
-  </div>
   
   <br>
   <button id="startMetronome" class="button">Start Metronome</button>
@@ -83,9 +74,16 @@
     const feedbackDiv = document.getElementById("feedback");
     const logDiv = document.getElementById("log");
     const bpmInput = document.getElementById("bpmInput");
-    const soundSelect = document.getElementById("soundSelect");
 
-    let metronomeSound = new Audio(soundSelect.value);
+    // Use the new reliable audio file
+    const metronomeSound = new Audio("https://freesound.org/data/previews/220/220173_4108545-lq.mp3");
+
+    // Ensure audio playback works on user interaction
+    function enableAudio() {
+      metronomeSound.play().catch((error) => {
+        console.log("Audio enabled after user interaction:", error);
+      });
+    }
 
     // Update BPM
     document.getElementById("setBpm").addEventListener("click", () => {
@@ -97,24 +95,14 @@
       }
     });
 
-    // Change metronome sound
-    soundSelect.addEventListener("change", () => {
-      metronomeSound = new Audio(soundSelect.value);
-    });
-
     // Start the metronome
     document.getElementById("startMetronome").addEventListener("click", () => {
-  if (interval) return; // Prevent multiple intervals
-
-  // Play sound once to enable it
-  metronomeSound.play().catch((error) => {
-    console.log("User interaction required to play sound:", error);
-  });
-
-  lastBeatTime = Date.now();
-  playMetronome();
-  interval = setInterval(playMetronome, beatInterval);
-});
+      enableAudio(); // Enable audio when user clicks start
+      if (interval) return; // Prevent multiple intervals
+      lastBeatTime = Date.now();
+      playMetronome();
+      interval = setInterval(playMetronome, beatInterval);
+    });
 
     // Stop the metronome
     document.getElementById("stopMetronome").addEventListener("click", () => {
@@ -126,7 +114,9 @@
     function playMetronome() {
       lastBeatTime = Date.now();
       metronomeSound.currentTime = 0;
-      metronomeSound.play();
+      metronomeSound.play().catch((error) => {
+        console.log("Error playing sound:", error);
+      });
     }
 
     // Handle button click
@@ -151,7 +141,6 @@
       log.push(distanceFromBeat.toFixed(3) + "s");
       if (log.length > maxLogEntries) log.shift(); // Keep log size to 1000 entries
       updateLog();
-      saveLog();
     });
 
     // Update log display
@@ -164,23 +153,6 @@
         logDiv.appendChild(div);
       });
     }
-
-    // Save log to local storage
-    function saveLog() {
-      localStorage.setItem("timingLog", JSON.stringify(log));
-    }
-
-    // Load log from local storage
-    function loadLog() {
-      const savedLog = JSON.parse(localStorage.getItem("timingLog"));
-      if (savedLog) {
-        log = savedLog.slice(0, maxLogEntries);
-        updateLog();
-      }
-    }
-
-    // Load log on page load
-    loadLog();
   </script>
 </body>
 </html>
