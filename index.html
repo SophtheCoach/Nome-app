@@ -38,10 +38,6 @@
       font-size: 18px;
       margin: 10px;
     }
-    select {
-      font-size: 18px;
-      padding: 5px;
-    }
   </style>
 </head>
 <body>
@@ -75,21 +71,18 @@
     const logDiv = document.getElementById("log");
     const bpmInput = document.getElementById("bpmInput");
 
-    // Use the new reliable audio file
-    const metronomeSound = new Audio("https://freesound.org/data/previews/220/220173_4108545-lq.mp3");
+    // Initialize Web Audio API
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-    // Ensure audio playback works on user interaction
-    function enableAudio() {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-function playBeep() {
-  const oscillator = audioContext.createOscillator();
-  oscillator.type = "sine"; // Waveform type
-  oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // Frequency in Hz
-  oscillator.connect(audioContext.destination);
-  oscillator.start();
-  oscillator.stop(audioContext.currentTime + 0.1); // Play for 0.1 seconds
-}
+    // Function to play a beep sound
+    function playBeep() {
+      const oscillator = audioContext.createOscillator();
+      oscillator.type = "sine"; // Waveform type
+      oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // Frequency in Hz
+      oscillator.connect(audioContext.destination);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.1); // Play for 0.1 seconds
+    }
 
     // Update BPM
     document.getElementById("setBpm").addEventListener("click", () => {
@@ -103,7 +96,6 @@ function playBeep() {
 
     // Start the metronome
     document.getElementById("startMetronome").addEventListener("click", () => {
-      enableAudio(); // Enable audio when user clicks start
       if (interval) return; // Prevent multiple intervals
       lastBeatTime = Date.now();
       playMetronome();
@@ -119,10 +111,7 @@ function playBeep() {
     // Play metronome sound
     function playMetronome() {
       lastBeatTime = Date.now();
-      metronomeSound.currentTime = 0;
-      metronomeSound.play().catch((error) => {
-        console.log("Error playing sound:", error);
-      });
+      playBeep(); // Use Web Audio API to play beep
     }
 
     // Handle button click
