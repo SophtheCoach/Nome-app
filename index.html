@@ -38,6 +38,23 @@
       font-size: 18px;
       margin: 10px;
     }
+
+    /* New Styles for the Click Button */
+    #clickButton {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%; /* Makes the button circular */
+      font-size: 18px; /* Adjust text size */
+      background-color: #007bff; /* Button background color */
+      color: white; /* Button text color */
+      border: none; /* Remove border */
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Add a shadow for visual effect */
+      cursor: pointer; /* Pointer cursor for interactivity */
+    }
+
+    #clickButton:hover {
+      background-color: #0056b3; /* Change color on hover */
+    }
   </style>
 </head>
 <body>
@@ -58,96 +75,5 @@
   
   <h2>Timing Log</h2>
   <div id="log"></div>
-
-  <script>
-    let interval;
-    let bpm = 60; // beats per minute
-    let beatInterval = 60000 / bpm; // milliseconds per beat
-    let lastBeatTime;
-    let log = [];
-    const maxLogEntries = 1000;
-
-    const feedbackDiv = document.getElementById("feedback");
-    const logDiv = document.getElementById("log");
-    const bpmInput = document.getElementById("bpmInput");
-
-    // Initialize Web Audio API
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-    // Function to play a beep sound
-    function playBeep() {
-      const oscillator = audioContext.createOscillator();
-      oscillator.type = "sine"; // Waveform type
-      oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // Frequency in Hz
-      oscillator.connect(audioContext.destination);
-      oscillator.start();
-      oscillator.stop(audioContext.currentTime + 0.1); // Play for 0.1 seconds
-    }
-
-    // Update BPM
-    document.getElementById("setBpm").addEventListener("click", () => {
-      bpm = parseInt(bpmInput.value, 10) || 60;
-      beatInterval = 60000 / bpm;
-      if (interval) {
-        clearInterval(interval);
-        startMetronome();
-      }
-    });
-
-    // Start the metronome
-    document.getElementById("startMetronome").addEventListener("click", () => {
-      if (interval) return; // Prevent multiple intervals
-      lastBeatTime = Date.now();
-      playMetronome();
-      interval = setInterval(playMetronome, beatInterval);
-    });
-
-    // Stop the metronome
-    document.getElementById("stopMetronome").addEventListener("click", () => {
-      clearInterval(interval);
-      interval = null;
-    });
-
-    // Play metronome sound
-    function playMetronome() {
-      lastBeatTime = Date.now();
-      playBeep(); // Use Web Audio API to play beep
-    }
-
-    // Handle button click
-    document.getElementById("clickButton").addEventListener("click", () => {
-      const clickTime = Date.now();
-      const diff = Math.abs(clickTime - lastBeatTime);
-
-      // Calculate timing offset
-      const offset = diff % beatInterval;
-      const distanceFromBeat = Math.min(offset, beatInterval - offset) / 1000; // convert to seconds
-
-      // Update feedback
-      if (distanceFromBeat <= 0.02) {
-        feedbackDiv.style.backgroundColor = "green";
-      } else if (distanceFromBeat <= 0.04) {
-        feedbackDiv.style.backgroundColor = "yellow";
-      } else {
-        feedbackDiv.style.backgroundColor = "red";
-      }
-
-      // Log the result
-      log.push(distanceFromBeat.toFixed(3) + "s");
-      if (log.length > maxLogEntries) log.shift(); // Keep log size to 1000 entries
-      updateLog();
-    });
-
-    // Update log display
-    function updateLog() {
-      logDiv.innerHTML = "";
-      log.slice(-10).forEach((entry, index) => {
-        const div = document.createElement("div");
-        div.className = "log-entry";
-        div.textContent = `${index + 1}: ${entry}`;
-        logDiv.appendChild(div);
-      });
-    }
-  </script>
 </body>
 </html>
