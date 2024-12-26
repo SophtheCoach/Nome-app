@@ -79,7 +79,7 @@
     <select id="soundSelect">
       <option value="beep">Beep</option>
       <option value="tick">Tick</option>
-      <option value="percussion">Percussion</option>
+      <option value="drum">Drum</option>
     </select>
   </div>
   
@@ -109,26 +109,63 @@
     // Initialize Web Audio API
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-    // Function to play a beep sound
-    function playBeep(frequency) {
-      const oscillator = audioContext.createOscillator();
-      oscillator.type = "sine"; // Waveform type
-      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime); // Frequency in Hz
-      oscillator.connect(audioContext.destination);
-      oscillator.start();
-      oscillator.stop(audioContext.currentTime + 0.1); // Play for 0.1 seconds
-    }
-
-    // Play sound based on selection
+    // Function to play a metronome sound
     function playSound() {
       const selectedSound = soundSelect.value;
+
       if (selectedSound === "beep") {
         playBeep(440); // Beep sound
       } else if (selectedSound === "tick") {
-        playBeep(300); // Tick sound
-      } else if (selectedSound === "percussion") {
-        playBeep(550); // Percussion sound
+        playTick(); // Tick sound
+      } else if (selectedSound === "drum") {
+        playDrum(); // Drum sound
       }
+    }
+
+    // Beep sound
+    function playBeep(frequency) {
+      const oscillator = audioContext.createOscillator();
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+      oscillator.connect(audioContext.destination);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.1); // Short beep
+    }
+
+    // Tick sound
+    function playTick() {
+      const oscillator = audioContext.createOscillator();
+      oscillator.type = "square"; // Sharper tone
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // Tick frequency
+      const gainNode = audioContext.createGain();
+      gainNode.gain.setValueAtTime(1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05); // Short decay
+      oscillator.connect(gainNode).connect(audioContext.destination);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.05);
+    }
+
+    // Drum sound
+    function playDrum() {
+      const oscillator = audioContext.createOscillator();
+      const noise = audioContext.createBufferSource();
+      const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.1, audioContext.sampleRate);
+      const data = buffer.getChannelData(0);
+
+      // Generate white noise
+      for (let i = 0; i < data.length; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      noise.buffer = buffer;
+
+      // Filter for drum-like sound
+      const filter = audioContext.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(200, audioContext.currentTime);
+
+      noise.connect(filter).connect(audioContext.destination);
+      noise.start();
+      noise.stop(audioContext.currentTime + 0.1);
     }
 
     // Update BPM
