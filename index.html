@@ -35,7 +35,7 @@
     .green-text {
       color: green;
     }
-    .orange-text { /* Changed from yellow-text to orange */
+    .orange-text {
       color: orange;
     }
     .red-text {
@@ -73,6 +73,15 @@
     <input type="number" id="bpmInput" value="60" min="20" max="300">
     <button id="setBpm" class="button">Set BPM</button>
   </div>
+
+  <div>
+    <label for="soundSelect">Metronome Sound:</label>
+    <select id="soundSelect">
+      <option value="beep">Beep</option>
+      <option value="tick">Tick</option>
+      <option value="percussion">Percussion</option>
+    </select>
+  </div>
   
   <br>
   <button id="startMetronome" class="button">Start Metronome</button>
@@ -95,18 +104,31 @@
     const feedbackDiv = document.getElementById("feedback");
     const logDiv = document.getElementById("log");
     const bpmInput = document.getElementById("bpmInput");
+    const soundSelect = document.getElementById("soundSelect");
 
     // Initialize Web Audio API
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
     // Function to play a beep sound
-    function playBeep() {
+    function playBeep(frequency) {
       const oscillator = audioContext.createOscillator();
       oscillator.type = "sine"; // Waveform type
-      oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // Frequency in Hz
+      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime); // Frequency in Hz
       oscillator.connect(audioContext.destination);
       oscillator.start();
       oscillator.stop(audioContext.currentTime + 0.1); // Play for 0.1 seconds
+    }
+
+    // Play sound based on selection
+    function playSound() {
+      const selectedSound = soundSelect.value;
+      if (selectedSound === "beep") {
+        playBeep(440); // Beep sound
+      } else if (selectedSound === "tick") {
+        playBeep(300); // Tick sound
+      } else if (selectedSound === "percussion") {
+        playBeep(550); // Percussion sound
+      }
     }
 
     // Update BPM
@@ -136,7 +158,7 @@
     // Play metronome sound
     function playMetronome() {
       lastBeatTime = Date.now();
-      playBeep(); // Use Web Audio API to play beep
+      playSound();
     }
 
     // Handle button click
@@ -156,7 +178,7 @@
         colorClass = "green-text";
         colorText = "Green";
       } else if (distanceFromBeat <= 0.04) {
-        feedbackDiv.style.backgroundColor = "orange"; /* Updated from yellow to orange */
+        feedbackDiv.style.backgroundColor = "orange";
         colorClass = "orange-text";
         colorText = "Orange";
       } else {
