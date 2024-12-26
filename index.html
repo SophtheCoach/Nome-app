@@ -38,6 +38,22 @@
       font-size: 18px;
       margin: 10px;
     }
+    /* New Styles for the Click Button */
+    #clickButton {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%; /* Makes the button circular */
+      font-size: 18px; /* Adjust text size */
+      background-color: #007bff; /* Button background color */
+      color: white; /* Button text color */
+      border: none; /* Remove border */
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Add a shadow for visual effect */
+      cursor: pointer; /* Pointer cursor for interactivity */
+    }
+
+    #clickButton:hover {
+      background-color: #0056b3; /* Change color on hover */
+    }
   </style>
 </head>
 <body>
@@ -53,7 +69,7 @@
   <button id="startMetronome" class="button">Start Metronome</button>
   <button id="stopMetronome" class="button">Stop Metronome</button>
   <br><br>
-  <button id="clickButton" class="button">Click to Test Timing</button>
+  <button id="clickButton" class="button">Tap Here/button>
   <div id="feedback" class="indicator"></div>
   
   <h2>Timing Log</h2>
