@@ -32,6 +32,15 @@
       font-size: 14px;
       margin: 5px 0;
     }
+    .green-text {
+      color: green;
+    }
+    .yellow-text {
+      color: yellow;
+    }
+    .red-text {
+      color: red;
+    }
     #bpmInput {
       width: 80px;
       text-align: center;
@@ -39,7 +48,6 @@
       margin: 10px;
     }
 
-    /* New Styles for the Click Button */
     #clickButton {
       width: 150px;
       height: 150px;
@@ -54,16 +62,6 @@
 
     #clickButton:hover {
       background-color: #0056b3; /* Change color on hover */
-    }
-
-    .green-text {
-      color: green;
-    }
-    .yellow-text {
-      color: yellow;
-    }
-    .red-text {
-      color: red;
     }
   </style>
 </head>
@@ -168,18 +166,18 @@
       }
 
       // Log the result with color
-      log.push({ time: distanceFromBeat.toFixed(3), color: colorClass, colorText });
-      if (log.length > maxLogEntries) log.shift(); // Keep log size to 1000 entries
+      log.unshift({ time: distanceFromBeat.toFixed(3), color: colorClass, colorText });
+      if (log.length > maxLogEntries) log.pop(); // Keep log size to 1000 entries
       updateLog();
     });
 
     // Update log display
     function updateLog() {
       logDiv.innerHTML = "";
-      log.slice(-10).forEach((entry, index) => {
+      log.forEach((entry, index) => {
         const div = document.createElement("div");
         div.className = `log-entry ${entry.color}`;
-        div.textContent = `${entry.time}s - ${entry.colorText}`;
+        div.textContent = `${log.length - index}: ${entry.time}s - ${entry.colorText}`;
         logDiv.appendChild(div);
       });
     }
