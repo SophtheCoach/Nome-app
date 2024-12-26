@@ -35,8 +35,8 @@
     .green-text {
       color: green;
     }
-    .yellow-text {
-      color: yellow;
+    .orange-text { /* Changed from yellow-text to orange */
+      color: orange;
     }
     .red-text {
       color: red;
@@ -156,9 +156,9 @@
         colorClass = "green-text";
         colorText = "Green";
       } else if (distanceFromBeat <= 0.04) {
-        feedbackDiv.style.backgroundColor = "yellow";
-        colorClass = "yellow-text";
-        colorText = "Yellow";
+        feedbackDiv.style.backgroundColor = "orange"; /* Updated from yellow to orange */
+        colorClass = "orange-text";
+        colorText = "Orange";
       } else {
         feedbackDiv.style.backgroundColor = "red";
         colorClass = "red-text";
