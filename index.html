@@ -55,6 +55,16 @@
     #clickButton:hover {
       background-color: #0056b3; /* Change color on hover */
     }
+
+    .green-text {
+      color: green;
+    }
+    .yellow-text {
+      color: yellow;
+    }
+    .red-text {
+      color: red;
+    }
   </style>
 </head>
 <body>
@@ -75,8 +85,6 @@
   
   <h2>Timing Log</h2>
   <div id="log"></div>
-</body>
-</html>
 
   <script>
     let interval;
@@ -142,17 +150,25 @@
       const offset = diff % beatInterval;
       const distanceFromBeat = Math.min(offset, beatInterval - offset) / 1000; // convert to seconds
 
-      // Update feedback
+      // Determine color and feedback
+      let colorClass = "";
+      let colorText = "";
       if (distanceFromBeat <= 0.02) {
         feedbackDiv.style.backgroundColor = "green";
+        colorClass = "green-text";
+        colorText = "Green";
       } else if (distanceFromBeat <= 0.04) {
         feedbackDiv.style.backgroundColor = "yellow";
+        colorClass = "yellow-text";
+        colorText = "Yellow";
       } else {
         feedbackDiv.style.backgroundColor = "red";
+        colorClass = "red-text";
+        colorText = "Red";
       }
 
-      // Log the result
-      log.push(distanceFromBeat.toFixed(3) + "s");
+      // Log the result with color
+      log.push({ time: distanceFromBeat.toFixed(3), color: colorClass, colorText });
       if (log.length > maxLogEntries) log.shift(); // Keep log size to 1000 entries
       updateLog();
     });
@@ -162,8 +178,8 @@
       logDiv.innerHTML = "";
       log.slice(-10).forEach((entry, index) => {
         const div = document.createElement("div");
-        div.className = "log-entry";
-        div.textContent = `${index + 1}: ${entry}`;
+        div.className = `log-entry ${entry.color}`;
+        div.textContent = `${entry.time}s - ${entry.colorText}`;
         logDiv.appendChild(div);
       });
     }
