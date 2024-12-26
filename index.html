@@ -10,17 +10,45 @@
       text-align: center;
       padding: 20px;
     }
+
+    /* General button styles */
     .button {
       padding: 15px 30px;
       font-size: 20px;
       cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px; /* Default rectangular buttons */
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
     }
+    .button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Styles for the Circular Click Button */
+    #clickButton {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%; /* Makes the button circular */
+      font-size: 18px; /* Adjust text size */
+      background-color: #28a745; /* Unique color for the click button */
+      color: white; /* Button text color */
+      border: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Add a shadow for visual effect */
+      cursor: pointer; /* Pointer cursor for interactivity */
+    }
+    #clickButton:hover {
+      background-color: #218838; /* Change color on hover */
+    }
+
     .indicator {
       width: 50px;
       height: 50px;
       border-radius: 50%;
       margin: 20px auto;
     }
+
     #log {
       max-height: 300px;
       overflow-y: auto;
@@ -28,32 +56,17 @@
       border: 1px solid #ccc;
       padding: 10px;
     }
+
     .log-entry {
       font-size: 14px;
       margin: 5px 0;
     }
+
     #bpmInput {
       width: 80px;
       text-align: center;
       font-size: 18px;
       margin: 10px;
-    }
-
-    /* New Styles for the Click Button */
-    #clickButton {
-      width: 150px;
-      height: 150px;
-      border-radius: 50%; /* Makes the button circular */
-      font-size: 18px; /* Adjust text size */
-      background-color: #007bff; /* Button background color */
-      color: white; /* Button text color */
-      border: none; /* Remove border */
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Add a shadow for visual effect */
-      cursor: pointer; /* Pointer cursor for interactivity */
-    }
-
-    #clickButton:hover {
-      background-color: #0056b3; /* Change color on hover */
     }
   </style>
 </head>
@@ -70,13 +83,11 @@
   <button id="startMetronome" class="button">Start Metronome</button>
   <button id="stopMetronome" class="button">Stop Metronome</button>
   <br><br>
-  <button id="clickButton" class="button">Tap Here</button>
+  <button id="clickButton">Click to Test Timing</button>
   <div id="feedback" class="indicator"></div>
   
   <h2>Timing Log</h2>
   <div id="log"></div>
-</body>
-</html>
 
   <script>
     let interval;
