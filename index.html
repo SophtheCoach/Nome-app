@@ -92,6 +92,11 @@
   
   <h2>Timing Log</h2>
   <div id="log"></div>
+  <div id="scores">
+    <h3>Score for Current Batch</h3>
+    <p id="greenScore">Green Hits Total %: 0%</p>
+    <p id="greenOrangeScore">Green & Orange Hits Total %: 0%</p>
+  </div>
 
   <script>
     let interval;
@@ -100,6 +105,7 @@
     let lastBeatTime;
     let log = [];
     const maxLogEntries = 1000;
+    const BATCH_SIZE = 200;
 
     const feedbackDiv = document.getElementById("feedback");
     const logDiv = document.getElementById("log");
@@ -226,6 +232,24 @@
         div.textContent = `${log.length - index}: ${entry.time}s - ${entry.colorText}`;
         logDiv.appendChild(div);
       });
+
+      updateScores();
+    }
+
+    function updateScores() {
+      const batch = log.slice(0, BATCH_SIZE);
+      const totalEntries = batch.length;
+
+      const greenHits = batch.filter(entry => entry.colorText === "Green").length;
+      const greenOrangeHits = batch.filter(entry =>
+        entry.colorText === "Green" || entry.colorText === "Orange"
+      ).length;
+
+      const greenPercentage = totalEntries > 0 ? (greenHits / totalEntries) * 100 : 0;
+      const greenOrangePercentage = totalEntries > 0 ? (greenOrangeHits / totalEntries) * 100 : 0;
+
+      document.getElementById("greenScore").textContent = `Green Hits Total %: ${greenPercentage.toFixed(2)}%`;
+      document.getElementById("greenOrangeScore").textContent = `Green & Orange Hits Total %: ${greenOrangePercentage.toFixed(2)}%`;
     }
   </script>
 </body>
