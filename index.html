@@ -57,6 +57,22 @@
       font-size: 18px;
       margin: 10px;
     }
+
+    #clickButton {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      font-size: 18px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+    }
+
+    #clickButton:hover {
+      background-color: #0056b3;
+    }
   </style>
 </head>
 <body>
@@ -98,7 +114,7 @@
   
   <h2>Score Log</h2>
   <div id="scores">
-    <p id="currentBatchScore">Current Batch Scores:</p>
+    <p id="currentBatchScore">Completed Batch Scores:</p>
     <ul id="scoreLog"></ul>
   </div>
 
@@ -244,22 +260,24 @@
 
     function updateScores() {
       const batchSize = parseInt(batchSizeSelect.value, 10);
-      const batch = log.slice(0, batchSize);
-      const totalEntries = batch.length;
+      while (log.length >= batchSize) {
+        const batch = log.slice(-batchSize); // Get last batch
+        log = log.slice(0, -batchSize); // Remove scored batch from log
 
-      const greenHits = batch.filter(entry => entry.colorText === "Green").length;
-      const greenOrangeHits = batch.filter(entry =>
-        entry.colorText === "Green" || entry.colorText === "Orange"
-      ).length;
+        const totalEntries = batch.length;
+        const greenHits = batch.filter(entry => entry.colorText === "Green").length;
+        const greenOrangeHits = batch.filter(entry =>
+          entry.colorText === "Green" || entry.colorText === "Orange"
+        ).length;
 
-      const greenPercentage = totalEntries > 0 ? (greenHits / totalEntries) * 100 : 0;
-      const greenOrangePercentage = totalEntries > 0 ? (greenOrangeHits / totalEntries) * 100 : 0;
+        const greenPercentage = (greenHits / totalEntries) * 100;
+        const greenOrangePercentage = (greenOrangeHits / totalEntries) * 100;
 
-      const currentScore = `Green: ${greenPercentage.toFixed(2)}%, Green & Orange: ${greenOrangePercentage.toFixed(2)}%`;
-      scoreLog.unshift(currentScore);
+        const currentScore = `Green: ${greenPercentage.toFixed(2)}%, Green & Orange: ${greenOrangePercentage.toFixed(2)}%`;
+        scoreLog.unshift(currentScore);
 
-      if (scoreLog.length > 10) scoreLog.pop();
-
+        if (scoreLog.length > 10) scoreLog.pop();
+      }
       updateScoreLog();
     }
 
@@ -274,3 +292,4 @@
   </script>
 </body>
 </html>
+
