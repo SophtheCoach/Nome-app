@@ -296,13 +296,15 @@
     }
 
     function updateScoreLog() {
-      scoreLogDiv.innerHTML = "";
-      scoreLog.forEach((score, index) => {
-        const li = document.createElement("li");
-        li.textContent = `${index + 1}. ${score}`;
-        scoreLogDiv.appendChild(li);
-      });
-    }
+  scoreLogDiv.innerHTML = "";
+  const totalBatches = scoreLog.length;
+
+  scoreLog.forEach((score, index) => {
+    const li = document.createElement("li");
+    li.textContent = `${totalBatches - index}. ${score}`;
+    scoreLogDiv.appendChild(li);
+  });
+}
   </script>
 </body>
 </html>
