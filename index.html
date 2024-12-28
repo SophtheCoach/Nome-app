@@ -57,6 +57,7 @@
       font-size: 18px;
       margin: 10px;
     }
+
     #clickButton {
       width: 150px;
       height: 150px;
@@ -68,6 +69,7 @@
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
       cursor: pointer;
     }
+
     #clickButton:hover {
       background-color: #0056b3;
     }
@@ -90,7 +92,7 @@
       <option value="drum">Drum</option>
     </select>
   </div>
-
+  
   <div>
     <label for="batchSizeSelect">Batch Size:</label>
     <select id="batchSizeSelect">
@@ -98,14 +100,6 @@
       <option value="100" selected>100 Entries</option>
       <option value="200">200 Entries</option>
     </select>
-  </div>
-
-  <div>
-    <label for="guideToggle">Guide Sounds:</label>
-    <button id="guideToggle" class="button">Turn On</button>
-    <br>
-    <label for="guideVolume">Guide Sound Volume:</label>
-    <input id="guideVolume" type="range" min="0" max="1" step="0.1" value="0.7">
   </div>
   
   <br>
@@ -139,72 +133,25 @@
     const soundSelect = document.getElementById("soundSelect");
     const batchSizeSelect = document.getElementById("batchSizeSelect");
     const scoreLogDiv = document.getElementById("scoreLog");
-    const guideVolumeControl = document.getElementById("guideVolume");
-    const guideToggle = document.getElementById("guideToggle");
 
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-    // Metronome Gain Node
-    const metronomeGain = audioContext.createGain();
-    metronomeGain.gain.value = 1.0; // Full volume by default
-    metronomeGain.connect(audioContext.destination);
-
-    // Guide Sound Nodes
-    const guideGain = audioContext.createGain();
-    guideGain.gain.value = 0.7; // Default 70% volume
-    guideGain.connect(audioContext.destination);
-
-    const guidePanner = audioContext.createPanner();
-    guidePanner.panningModel = "equalpower";
-    guidePanner.connect(guideGain);
-
-    // Guide Sound Toggle
-    let guideSoundsEnabled = false;
-    guideToggle.addEventListener("click", () => {
-      guideSoundsEnabled = !guideSoundsEnabled;
-      guideToggle.textContent = guideSoundsEnabled ? "Turn Off" : "Turn On";
-    });
-
-    // Adjust Guide Sound Volume
-    guideVolumeControl.addEventListener("input", () => {
-      guideGain.gain.value = parseFloat(guideVolumeControl.value);
-    });
-
-    function playGuideSound(type) {
-      if (!guideSoundsEnabled) return;
-
-      const oscillator = audioContext.createOscillator();
-      oscillator.type = "sine";
-      const now = audioContext.currentTime;
-
-      if (type === "early") {
-        guidePanner.positionX.setValueAtTime(-1, now);
-        oscillator.frequency.setValueAtTime(300, now);
-      } else if (type === "late") {
-        guidePanner.positionX.setValueAtTime(1, now);
-        oscillator.frequency.setValueAtTime(800, now);
-      } else if (type === "onTime") {
-        guidePanner.positionX.setValueAtTime(0, now);
-        oscillator.frequency.setValueAtTime(1200, now);
-      }
-
-      oscillator.connect(guidePanner);
-      oscillator.start(now);
-      oscillator.stop(now + 0.2);
-    }
-
     function playSound() {
       const selectedSound = soundSelect.value;
-      if (selectedSound === "beep") playBeep(440);
-      else if (selectedSound === "tick") playTick();
-      else if (selectedSound === "drum") playDrum();
+      if (selectedSound === "beep") {
+        playBeep(440);
+      } else if (selectedSound === "tick") {
+        playTick();
+      } else if (selectedSound === "drum") {
+        playDrum();
+      }
     }
 
     function playBeep(frequency) {
       const oscillator = audioContext.createOscillator();
       oscillator.type = "sine";
       oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-      oscillator.connect(metronomeGain);
+      oscillator.connect(audioContext.destination);
       oscillator.start();
       oscillator.stop(audioContext.currentTime + 0.1);
     }
@@ -216,7 +163,7 @@
       const gainNode = audioContext.createGain();
       gainNode.gain.setValueAtTime(1, audioContext.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
-      oscillator.connect(gainNode).connect(metronomeGain);
+      oscillator.connect(gainNode).connect(audioContext.destination);
       oscillator.start();
       oscillator.stop(audioContext.currentTime + 0.05);
     }
@@ -237,10 +184,10 @@
       filter.Q.setValueAtTime(1, audioContext.currentTime);
 
       const gainNode = audioContext.createGain();
-      gainNode.gain.setValueAtTime(3, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(3, audioContext.currentTime); // Increased initial gain
       gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
 
-      noise.connect(filter).connect(gainNode).connect(metronomeGain);
+      noise.connect(filter).connect(gainNode).connect(audioContext.destination);
       noise.start();
       noise.stop(audioContext.currentTime + 0.1);
     }
@@ -284,17 +231,14 @@
         feedbackDiv.style.backgroundColor = "green";
         colorClass = "green-text";
         colorText = "Green";
-        playGuideSound("onTime");
       } else if (distanceFromBeat <= 0.04) {
         feedbackDiv.style.backgroundColor = "orange";
         colorClass = "orange-text";
         colorText = "Orange";
-        playGuideSound("late");
       } else {
         feedbackDiv.style.backgroundColor = "red";
         colorClass = "red-text";
         colorText = "Red";
-        playGuideSound("early");
       }
 
       log.unshift({ time: distanceFromBeat.toFixed(3), color: colorClass, colorText });
@@ -316,60 +260,51 @@
 
     function updateScores() {
       const batchSize = parseInt(batchSizeSelect.value, 10);
-
       while (log.length >= batchSize) {
-        const batch = log.slice(-batchSize); // Get the last batch
-        log = log.slice(0, -batchSize); // Remove the processed batch from the log
+        const batch = log.slice(-batchSize); // Get last batch
+        log = log.slice(0, -batchSize); // Remove scored batch from log
 
         const totalEntries = batch.length;
-
-        // Calculate percentages
-        const superRightOnHits = batch.filter(entry => entry.colorText === "Green").length;
-        const rightOnHits = batch.filter(entry => 
+        const greenHits = batch.filter(entry => entry.colorText === "Green").length;
+        const greenOrangeHits = batch.filter(entry =>
           entry.colorText === "Green" || entry.colorText === "Orange"
         ).length;
 
-        const superRightOnPercentage = (superRightOnHits / totalEntries) * 100;
-        const rightOnPercentage = (rightOnHits / totalEntries) * 100;
+        const greenPercentage = (greenHits / totalEntries) * 100;
+        const greenOrangePercentage = (greenOrangeHits / totalEntries) * 100;
 
-        // Calculate bursts and streaks
+        // Count bursts
         let burstCount = 0;
         let streakCount = 0;
         let maxStreak = 0;
-
         batch.forEach(entry => {
           if (entry.colorText === "Green") {
             streakCount++;
-            if (streakCount >= 4 && streakCount % 4 === 0) {
-              burstCount++;
-            }
-            maxStreak = Math.max(maxStreak, streakCount);
+            if (streakCount >= 4) burstCount++;
+            if (streakCount > maxStreak) maxStreak = streakCount;
           } else {
             streakCount = 0;
           }
         });
 
-        // Create a score summary for the batch
-        const scoreSummary = `Super Right On: ${superRightOnPercentage.toFixed(2)}%, Right On: ${rightOnPercentage.toFixed(2)}%, Bursts: ${burstCount}, Max Streak: ${maxStreak}`;
-        scoreLog.unshift(scoreSummary);
+        const currentScore = `Super Right On: ${greenPercentage.toFixed(2)}%, Right On: ${greenOrangePercentage.toFixed(2)}%, Bursts: ${burstCount}, Max Streak: ${maxStreak}`;
+        scoreLog.unshift(currentScore);
 
-        // Limit score log to 10 entries
         if (scoreLog.length > 10) scoreLog.pop();
       }
-
       updateScoreLog();
     }
 
     function updateScoreLog() {
-      scoreLogDiv.innerHTML = ""; // Clear previous log
-      const totalBatches = scoreLog.length;
+  scoreLogDiv.innerHTML = "";
+  const totalBatches = scoreLog.length;
 
-      scoreLog.forEach((score, index) => {
-        const li = document.createElement("li");
-        li.textContent = `${totalBatches - index}. ${score}`;
-        scoreLogDiv.appendChild(li);
-      });
-    }
+  scoreLog.forEach((score, index) => {
+    const li = document.createElement("li");
+    li.textContent = `${totalBatches - index}. ${score}`;
+    scoreLogDiv.appendChild(li);
+  });
+}
   </script>
 </body>
 </html>
