@@ -144,6 +144,11 @@
 
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
+    // Metronome Gain Node
+    const metronomeGain = audioContext.createGain();
+    metronomeGain.gain.value = 1.0; // Full volume by default
+    metronomeGain.connect(audioContext.destination);
+
     // Guide Sound Nodes
     const guideGain = audioContext.createGain();
     guideGain.gain.value = 0.7; // Default 70% volume
@@ -172,21 +177,20 @@
       oscillator.type = "sine";
       const now = audioContext.currentTime;
 
-      // Stereo and frequency adjustments
       if (type === "early") {
-        guidePanner.positionX.setValueAtTime(-1, now); // Left ear
-        oscillator.frequency.setValueAtTime(300, now); // Woosh frequency
+        guidePanner.positionX.setValueAtTime(-1, now);
+        oscillator.frequency.setValueAtTime(300, now);
       } else if (type === "late") {
-        guidePanner.positionX.setValueAtTime(1, now); // Right ear
-        oscillator.frequency.setValueAtTime(800, now); // Click frequency
+        guidePanner.positionX.setValueAtTime(1, now);
+        oscillator.frequency.setValueAtTime(800, now);
       } else if (type === "onTime") {
-        guidePanner.positionX.setValueAtTime(0, now); // Both ears
-        oscillator.frequency.setValueAtTime(1200, now); // Bing frequency
+        guidePanner.positionX.setValueAtTime(0, now);
+        oscillator.frequency.setValueAtTime(1200, now);
       }
 
       oscillator.connect(guidePanner);
       oscillator.start(now);
-      oscillator.stop(now + 0.2); // Short duration
+      oscillator.stop(now + 0.2);
     }
 
     function playSound() {
@@ -196,7 +200,51 @@
       else if (selectedSound === "drum") playDrum();
     }
 
-    // Metronome Functions, Existing Scoring, and Logs Remain Unchanged
+    function playBeep(frequency) {
+      const oscillator = audioContext.createOscillator();
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+      oscillator.connect(metronomeGain);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.1);
+    }
+
+    function playTick() {
+      const oscillator = audioContext.createOscillator();
+      oscillator.type = "square";
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      const gainNode = audioContext.createGain();
+      gainNode.gain.setValueAtTime(1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
+      oscillator.connect(gainNode).connect(metronomeGain);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.05);
+    }
+
+    function playDrum() {
+      const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.1, audioContext.sampleRate);
+      const noiseData = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < noiseData.length; i++) {
+        noiseData[i] = Math.random() * 2 - 1;
+      }
+
+      const noise = audioContext.createBufferSource();
+      noise.buffer = noiseBuffer;
+
+      const filter = audioContext.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(300, audioContext.currentTime);
+      filter.Q.setValueAtTime(1, audioContext.currentTime);
+
+      const gainNode = audioContext.createGain();
+      gainNode.gain.setValueAtTime(3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
+
+      noise.connect(filter).connect(gainNode).connect(metronomeGain);
+      noise.start();
+      noise.stop(audioContext.currentTime + 0.1);
+    }
+
     document.getElementById("setBpm").addEventListener("click", () => {
       bpm = parseInt(bpmInput.value, 10) || 60;
       beatInterval = 60000 / bpm;
@@ -264,6 +312,63 @@
       });
 
       updateScores();
+    }
+
+    function updateScores() {
+      const batchSize = parseInt(batchSizeSelect.value, 10);
+
+      while (log.length >= batchSize) {
+        const batch = log.slice(-batchSize); // Get the last batch
+        log = log.slice(0, -batchSize); // Remove the processed batch from the log
+
+        const totalEntries = batch.length;
+
+        // Calculate percentages
+        const superRightOnHits = batch.filter(entry => entry.colorText === "Green").length;
+        const rightOnHits = batch.filter(entry => 
+          entry.colorText === "Green" || entry.colorText === "Orange"
+        ).length;
+
+        const superRightOnPercentage = (superRightOnHits / totalEntries) * 100;
+        const rightOnPercentage = (rightOnHits / totalEntries) * 100;
+
+        // Calculate bursts and streaks
+        let burstCount = 0;
+        let streakCount = 0;
+        let maxStreak = 0;
+
+        batch.forEach(entry => {
+          if (entry.colorText === "Green") {
+            streakCount++;
+            if (streakCount >= 4 && streakCount % 4 === 0) {
+              burstCount++;
+            }
+            maxStreak = Math.max(maxStreak, streakCount);
+          } else {
+            streakCount = 0;
+          }
+        });
+
+        // Create a score summary for the batch
+        const scoreSummary = `Super Right On: ${superRightOnPercentage.toFixed(2)}%, Right On: ${rightOnPercentage.toFixed(2)}%, Bursts: ${burstCount}, Max Streak: ${maxStreak}`;
+        scoreLog.unshift(scoreSummary);
+
+        // Limit score log to 10 entries
+        if (scoreLog.length > 10) scoreLog.pop();
+      }
+
+      updateScoreLog();
+    }
+
+    function updateScoreLog() {
+      scoreLogDiv.innerHTML = ""; // Clear previous log
+      const totalBatches = scoreLog.length;
+
+      scoreLog.forEach((score, index) => {
+        const li = document.createElement("li");
+        li.textContent = `${totalBatches - index}. ${score}`;
+        scoreLogDiv.appendChild(li);
+      });
     }
   </script>
 </body>
