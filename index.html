@@ -51,17 +51,17 @@
     #clickButton {
       width: 150px;
       height: 150px;
-      border-radius: 50%; /* Makes the button circular */
-      font-size: 18px; /* Adjust text size */
-      background-color: #007bff; /* Button background color */
-      color: white; /* Button text color */
-      border: none; /* Remove border */
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Add a shadow for visual effect */
-      cursor: pointer; /* Pointer cursor for interactivity */
+      border-radius: 50%;
+      font-size: 18px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
     }
 
     #clickButton:hover {
-      background-color: #0056b3; /* Change color on hover */
+      background-color: #0056b3;
     }
   </style>
 </head>
@@ -95,8 +95,8 @@
 
   <script>
     let interval;
-    let bpm = 60; // beats per minute
-    let beatInterval = 60000 / bpm; // milliseconds per beat
+    let bpm = 60;
+    let beatInterval = 60000 / bpm;
     let lastBeatTime;
     let log = [];
     const maxLogEntries = 1000;
@@ -106,69 +106,64 @@
     const bpmInput = document.getElementById("bpmInput");
     const soundSelect = document.getElementById("soundSelect");
 
-    // Initialize Web Audio API
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-    // Function to play a metronome sound
     function playSound() {
       const selectedSound = soundSelect.value;
-
       if (selectedSound === "beep") {
-        playBeep(440); // Beep sound
+        playBeep(440);
       } else if (selectedSound === "tick") {
-        playTick(); // Tick sound
+        playTick();
       } else if (selectedSound === "drum") {
-        playDrum(); // Drum sound
+        playDrum();
       }
     }
 
-    // Beep sound
     function playBeep(frequency) {
       const oscillator = audioContext.createOscillator();
       oscillator.type = "sine";
       oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
       oscillator.connect(audioContext.destination);
       oscillator.start();
-      oscillator.stop(audioContext.currentTime + 0.1); // Short beep
+      oscillator.stop(audioContext.currentTime + 0.1);
     }
 
-    // Tick sound
     function playTick() {
       const oscillator = audioContext.createOscillator();
-      oscillator.type = "square"; // Sharper tone
-      oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // Tick frequency
+      oscillator.type = "square";
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
       const gainNode = audioContext.createGain();
       gainNode.gain.setValueAtTime(1, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05); // Short decay
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
       oscillator.connect(gainNode).connect(audioContext.destination);
       oscillator.start();
       oscillator.stop(audioContext.currentTime + 0.05);
     }
 
-    // Drum sound
     function playDrum() {
-      const oscillator = audioContext.createOscillator();
-      const noise = audioContext.createBufferSource();
-      const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.1, audioContext.sampleRate);
-      const data = buffer.getChannelData(0);
-
-      // Generate white noise
-      for (let i = 0; i < data.length; i++) {
-        data[i] = Math.random() * 2 - 1;
+      const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.1, audioContext.sampleRate);
+      const noiseData = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < noiseData.length; i++) {
+        noiseData[i] = Math.random() * 2 - 1;
       }
-      noise.buffer = buffer;
 
-      // Filter for drum-like sound
+      const noise = audioContext.createBufferSource();
+      noise.buffer = noiseBuffer;
+
       const filter = audioContext.createBiquadFilter();
       filter.type = "lowpass";
-      filter.frequency.setValueAtTime(200, audioContext.currentTime);
+      filter.frequency.setValueAtTime(300, audioContext.currentTime);
+      filter.Q.setValueAtTime(1, audioContext.currentTime);
 
-      noise.connect(filter).connect(audioContext.destination);
+      const gainNode = audioContext.createGain();
+      gainNode.gain.setValueAtTime(1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
+
+      noise.connect(filter).connect(gainNode).connect(audioContext.destination);
       noise.start();
       noise.stop(audioContext.currentTime + 0.1);
     }
 
-    // Update BPM
     document.getElementById("setBpm").addEventListener("click", () => {
       bpm = parseInt(bpmInput.value, 10) || 60;
       beatInterval = 60000 / bpm;
@@ -178,36 +173,30 @@
       }
     });
 
-    // Start the metronome
     document.getElementById("startMetronome").addEventListener("click", () => {
-      if (interval) return; // Prevent multiple intervals
+      if (interval) return;
       lastBeatTime = Date.now();
       playMetronome();
       interval = setInterval(playMetronome, beatInterval);
     });
 
-    // Stop the metronome
     document.getElementById("stopMetronome").addEventListener("click", () => {
       clearInterval(interval);
       interval = null;
     });
 
-    // Play metronome sound
     function playMetronome() {
       lastBeatTime = Date.now();
       playSound();
     }
 
-    // Handle button click
     document.getElementById("clickButton").addEventListener("click", () => {
       const clickTime = Date.now();
       const diff = Math.abs(clickTime - lastBeatTime);
 
-      // Calculate timing offset
       const offset = diff % beatInterval;
-      const distanceFromBeat = Math.min(offset, beatInterval - offset) / 1000; // convert to seconds
+      const distanceFromBeat = Math.min(offset, beatInterval - offset) / 1000;
 
-      // Determine color and feedback
       let colorClass = "";
       let colorText = "";
       if (distanceFromBeat <= 0.02) {
@@ -224,13 +213,11 @@
         colorText = "Red";
       }
 
-      // Log the result with color
       log.unshift({ time: distanceFromBeat.toFixed(3), color: colorClass, colorText });
-      if (log.length > maxLogEntries) log.pop(); // Keep log size to 1000 entries
+      if (log.length > maxLogEntries) log.pop();
       updateLog();
     });
 
-    // Update log display
     function updateLog() {
       logDiv.innerHTML = "";
       log.forEach((entry, index) => {
