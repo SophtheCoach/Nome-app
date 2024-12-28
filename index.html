@@ -273,7 +273,21 @@
         const greenPercentage = (greenHits / totalEntries) * 100;
         const greenOrangePercentage = (greenOrangeHits / totalEntries) * 100;
 
-        const currentScore = `Green: ${greenPercentage.toFixed(2)}%, Green & Orange: ${greenOrangePercentage.toFixed(2)}%`;
+        // Count bursts
+        let burstCount = 0;
+        let streakCount = 0;
+        let maxStreak = 0;
+        batch.forEach(entry => {
+          if (entry.colorText === "Green") {
+            streakCount++;
+            if (streakCount >= 4) burstCount++;
+            if (streakCount > maxStreak) maxStreak = streakCount;
+          } else {
+            streakCount = 0;
+          }
+        });
+
+        const currentScore = `Super Right On: ${greenPercentage.toFixed(2)}%, Right On: ${greenOrangePercentage.toFixed(2)}%, Bursts: ${burstCount}, Max Streak: ${maxStreak}`;
         scoreLog.unshift(currentScore);
 
         if (scoreLog.length > 10) scoreLog.pop();
@@ -292,4 +306,3 @@
   </script>
 </body>
 </html>
-
