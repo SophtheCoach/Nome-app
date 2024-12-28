@@ -32,6 +32,16 @@
       font-size: 14px;
       margin: 5px 0;
     }
+    #scores {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+    #batchSizeSelect {
+      margin: 10px 0;
+    }
     .green-text {
       color: green;
     }
@@ -46,22 +56,6 @@
       text-align: center;
       font-size: 18px;
       margin: 10px;
-    }
-
-    #clickButton {
-      width: 150px;
-      height: 150px;
-      border-radius: 50%;
-      font-size: 18px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-      cursor: pointer;
-    }
-
-    #clickButton:hover {
-      background-color: #0056b3;
     }
   </style>
 </head>
@@ -83,6 +77,15 @@
     </select>
   </div>
   
+  <div>
+    <label for="batchSizeSelect">Batch Size:</label>
+    <select id="batchSizeSelect">
+      <option value="50">50 Entries</option>
+      <option value="100" selected>100 Entries</option>
+      <option value="200">200 Entries</option>
+    </select>
+  </div>
+  
   <br>
   <button id="startMetronome" class="button">Start Metronome</button>
   <button id="stopMetronome" class="button">Stop Metronome</button>
@@ -92,10 +95,11 @@
   
   <h2>Timing Log</h2>
   <div id="log"></div>
+  
+  <h2>Score Log</h2>
   <div id="scores">
-    <h3>Score for Current Batch</h3>
-    <p id="greenScore">Green Hits Total %: 0%</p>
-    <p id="greenOrangeScore">Green & Orange Hits Total %: 0%</p>
+    <p id="currentBatchScore">Current Batch Scores:</p>
+    <ul id="scoreLog"></ul>
   </div>
 
   <script>
@@ -104,13 +108,15 @@
     let beatInterval = 60000 / bpm;
     let lastBeatTime;
     let log = [];
+    let scoreLog = [];
     const maxLogEntries = 1000;
-    const BATCH_SIZE = 200;
 
     const feedbackDiv = document.getElementById("feedback");
     const logDiv = document.getElementById("log");
     const bpmInput = document.getElementById("bpmInput");
     const soundSelect = document.getElementById("soundSelect");
+    const batchSizeSelect = document.getElementById("batchSizeSelect");
+    const scoreLogDiv = document.getElementById("scoreLog");
 
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -162,7 +168,7 @@
       filter.Q.setValueAtTime(1, audioContext.currentTime);
 
       const gainNode = audioContext.createGain();
-      gainNode.gain.setValueAtTime(1, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(3, audioContext.currentTime); // Increased initial gain
       gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
 
       noise.connect(filter).connect(gainNode).connect(audioContext.destination);
@@ -237,7 +243,8 @@
     }
 
     function updateScores() {
-      const batch = log.slice(0, BATCH_SIZE);
+      const batchSize = parseInt(batchSizeSelect.value, 10);
+      const batch = log.slice(0, batchSize);
       const totalEntries = batch.length;
 
       const greenHits = batch.filter(entry => entry.colorText === "Green").length;
@@ -248,8 +255,21 @@
       const greenPercentage = totalEntries > 0 ? (greenHits / totalEntries) * 100 : 0;
       const greenOrangePercentage = totalEntries > 0 ? (greenOrangeHits / totalEntries) * 100 : 0;
 
-      document.getElementById("greenScore").textContent = `Green Hits Total %: ${greenPercentage.toFixed(2)}%`;
-      document.getElementById("greenOrangeScore").textContent = `Green & Orange Hits Total %: ${greenOrangePercentage.toFixed(2)}%`;
+      const currentScore = `Green: ${greenPercentage.toFixed(2)}%, Green & Orange: ${greenOrangePercentage.toFixed(2)}%`;
+      scoreLog.unshift(currentScore);
+
+      if (scoreLog.length > 10) scoreLog.pop();
+
+      updateScoreLog();
+    }
+
+    function updateScoreLog() {
+      scoreLogDiv.innerHTML = "";
+      scoreLog.forEach((score, index) => {
+        const li = document.createElement("li");
+        li.textContent = `${index + 1}. ${score}`;
+        scoreLogDiv.appendChild(li);
+      });
     }
   </script>
 </body>
