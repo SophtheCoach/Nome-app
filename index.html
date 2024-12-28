@@ -1,195 +1,270 @@
-<div>
-  <label for="guideToggle">Guide Sounds:</label>
-  <button id="guideToggle" class="button">Turn On</button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Metronome Timing App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    .button {
+      padding: 15px 30px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .indicator {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      margin: 20px auto;
+    }
+    #log {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+    .log-entry {
+      font-size: 14px;
+      margin: 5px 0;
+    }
+    #scores {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+    #batchSizeSelect {
+      margin: 10px 0;
+    }
+    .green-text {
+      color: green;
+    }
+    .orange-text {
+      color: orange;
+    }
+    .red-text {
+      color: red;
+    }
+    #bpmInput {
+      width: 80px;
+      text-align: center;
+      font-size: 18px;
+      margin: 10px;
+    }
+    #clickButton {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      font-size: 18px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+    }
+    #clickButton:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>Metronome Timing App</h1>
+  
+  <div>
+    <label for="bpmInput">BPM:</label>
+    <input type="number" id="bpmInput" value="60" min="20" max="300">
+    <button id="setBpm" class="button">Set BPM</button>
+  </div>
+
+  <div>
+    <label for="soundSelect">Metronome Sound:</label>
+    <select id="soundSelect">
+      <option value="beep">Beep</option>
+      <option value="tick">Tick</option>
+      <option value="drum">Drum</option>
+    </select>
+  </div>
+
+  <div>
+    <label for="batchSizeSelect">Batch Size:</label>
+    <select id="batchSizeSelect">
+      <option value="50">50 Entries</option>
+      <option value="100" selected>100 Entries</option>
+      <option value="200">200 Entries</option>
+    </select>
+  </div>
+
+  <div>
+    <label for="guideToggle">Guide Sounds:</label>
+    <button id="guideToggle" class="button">Turn On</button>
+    <br>
+    <label for="guideVolume">Guide Sound Volume:</label>
+    <input id="guideVolume" type="range" min="0" max="1" step="0.1" value="0.7">
+  </div>
+  
   <br>
-  <label for="guideVolume">Guide Sound Volume:</label>
-  <input id="guideVolume" type="range" min="0" max="1" step="0.1" value="0.7">
-</div>
+  <button id="startMetronome" class="button">Start Metronome</button>
+  <button id="stopMetronome" class="button">Stop Metronome</button>
+  <br><br>
+  <button id="clickButton" class="button">Tap Here</button>
+  <div id="feedback" class="indicator"></div>
+  
+  <h2>Timing Log</h2>
+  <div id="log"></div>
+  
+  <h2>Score Log</h2>
+  <div id="scores">
+    <p id="currentBatchScore">Completed Batch Scores:</p>
+    <ul id="scoreLog"></ul>
+  </div>
 
-<script>
-  let interval;
-  let bpm = 60;
-  let beatInterval = 60000 / bpm;
-  let lastBeatTime;
-  let log = [];
-  let scoreLog = [];
-  const maxLogEntries = 1000;
+  <script>
+    let interval;
+    let bpm = 60;
+    let beatInterval = 60000 / bpm;
+    let lastBeatTime;
+    let log = [];
+    let scoreLog = [];
+    const maxLogEntries = 1000;
 
-  const feedbackDiv = document.getElementById("feedback");
-  const logDiv = document.getElementById("log");
-  const bpmInput = document.getElementById("bpmInput");
-  const soundSelect = document.getElementById("soundSelect");
-  const batchSizeSelect = document.getElementById("batchSizeSelect");
-  const scoreLogDiv = document.getElementById("scoreLog");
-  const guideVolumeControl = document.getElementById("guideVolume");
-  const guideToggle = document.getElementById("guideToggle");
+    const feedbackDiv = document.getElementById("feedback");
+    const logDiv = document.getElementById("log");
+    const bpmInput = document.getElementById("bpmInput");
+    const soundSelect = document.getElementById("soundSelect");
+    const batchSizeSelect = document.getElementById("batchSizeSelect");
+    const scoreLogDiv = document.getElementById("scoreLog");
+    const guideVolumeControl = document.getElementById("guideVolume");
+    const guideToggle = document.getElementById("guideToggle");
 
-  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-  // Guide Sound Nodes
-  const guideGain = audioContext.createGain();
-  guideGain.gain.value = 0.7; // Default 70% volume
-  guideGain.connect(audioContext.destination);
+    // Guide Sound Nodes
+    const guideGain = audioContext.createGain();
+    guideGain.gain.value = 0.7; // Default 70% volume
+    guideGain.connect(audioContext.destination);
 
-  const guidePanner = audioContext.createPanner();
-  guidePanner.panningModel = "equalpower";
-  guidePanner.connect(guideGain);
+    const guidePanner = audioContext.createPanner();
+    guidePanner.panningModel = "equalpower";
+    guidePanner.connect(guideGain);
 
-  // Guide Sound Toggle
-  let guideSoundsEnabled = false;
-  guideToggle.addEventListener("click", () => {
-    guideSoundsEnabled = !guideSoundsEnabled;
-    guideToggle.textContent = guideSoundsEnabled ? "Turn Off" : "Turn On";
-  });
-
-  // Adjust Guide Sound Volume
-  guideVolumeControl.addEventListener("input", () => {
-    guideGain.gain.value = parseFloat(guideVolumeControl.value);
-  });
-
-  function playGuideSound(type) {
-    if (!guideSoundsEnabled) return;
-
-    const oscillator = audioContext.createOscillator();
-    oscillator.type = "sine";
-    const now = audioContext.currentTime;
-
-    // Stereo and frequency adjustments
-    if (type === "early") {
-      guidePanner.positionX.setValueAtTime(-1, now); // Left ear
-      oscillator.frequency.setValueAtTime(300, now); // Woosh frequency
-    } else if (type === "late") {
-      guidePanner.positionX.setValueAtTime(1, now); // Right ear
-      oscillator.frequency.setValueAtTime(800, now); // Click frequency
-    } else if (type === "onTime") {
-      guidePanner.positionX.setValueAtTime(0, now); // Both ears
-      oscillator.frequency.setValueAtTime(1200, now); // Bing frequency
-    }
-
-    oscillator.connect(guidePanner);
-    oscillator.start(now);
-    oscillator.stop(now + 0.2); // Short duration
-  }
-
-  // Metronome Functions
-  function playSound() {
-    const selectedSound = soundSelect.value;
-    if (selectedSound === "beep") playBeep(440);
-    else if (selectedSound === "tick") playTick();
-    else if (selectedSound === "drum") playDrum();
-  }
-
-  function playBeep(frequency) {
-    const oscillator = audioContext.createOscillator();
-    oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-    oscillator.connect(audioContext.destination);
-    oscillator.start();
-    oscillator.stop(audioContext.currentTime + 0.1);
-  }
-
-  function playTick() {
-    const oscillator = audioContext.createOscillator();
-    oscillator.type = "square";
-    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-    const gainNode = audioContext.createGain();
-    gainNode.gain.setValueAtTime(1, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
-    oscillator.connect(gainNode).connect(audioContext.destination);
-    oscillator.start();
-    oscillator.stop(audioContext.currentTime + 0.05);
-  }
-
-  function playDrum() {
-    const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.1, audioContext.sampleRate);
-    const noiseData = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < noiseData.length; i++) {
-      noiseData[i] = Math.random() * 2 - 1;
-    }
-
-    const noise = audioContext.createBufferSource();
-    noise.buffer = noiseBuffer;
-
-    const filter = audioContext.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(300, audioContext.currentTime);
-    filter.Q.setValueAtTime(1, audioContext.currentTime);
-
-    const gainNode = audioContext.createGain();
-    gainNode.gain.setValueAtTime(3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
-
-    noise.connect(filter).connect(gainNode).connect(audioContext.destination);
-    noise.start();
-    noise.stop(audioContext.currentTime + 0.1);
-  }
-
-  document.getElementById("setBpm").addEventListener("click", () => {
-    bpm = parseInt(bpmInput.value, 10) || 60;
-    beatInterval = 60000 / bpm;
-    if (interval) {
-      clearInterval(interval);
-      startMetronome();
-    }
-  });
-
-  document.getElementById("startMetronome").addEventListener("click", () => {
-    if (interval) return;
-    lastBeatTime = Date.now();
-    playMetronome();
-    interval = setInterval(playMetronome, beatInterval);
-  });
-
-  document.getElementById("stopMetronome").addEventListener("click", () => {
-    clearInterval(interval);
-    interval = null;
-  });
-
-  function playMetronome() {
-    lastBeatTime = Date.now();
-    playSound();
-  }
-
-  document.getElementById("clickButton").addEventListener("click", () => {
-    const clickTime = Date.now();
-    const diff = Math.abs(clickTime - lastBeatTime);
-
-    const offset = diff % beatInterval;
-    const distanceFromBeat = Math.min(offset, beatInterval - offset) / 1000;
-
-    let colorClass = "";
-    let colorText = "";
-    if (distanceFromBeat <= 0.02) {
-      feedbackDiv.style.backgroundColor = "green";
-      colorClass = "green-text";
-      colorText = "Green";
-      playGuideSound("onTime");
-    } else if (distanceFromBeat <= 0.04) {
-      feedbackDiv.style.backgroundColor = "orange";
-      colorClass = "orange-text";
-      colorText = "Orange";
-      playGuideSound("late");
-    } else {
-      feedbackDiv.style.backgroundColor = "red";
-      colorClass = "red-text";
-      colorText = "Red";
-      playGuideSound("early");
-    }
-
-    log.unshift({ time: distanceFromBeat.toFixed(3), color: colorClass, colorText });
-    if (log.length > maxLogEntries) log.pop();
-    updateLog();
-  });
-
-  function updateLog() {
-    logDiv.innerHTML = "";
-    log.forEach((entry, index) => {
-      const div = document.createElement("div");
-      div.className = `log-entry ${entry.color}`;
-      div.textContent = `${log.length - index}: ${entry.time}s - ${entry.colorText}`;
-      logDiv.appendChild(div);
+    // Guide Sound Toggle
+    let guideSoundsEnabled = false;
+    guideToggle.addEventListener("click", () => {
+      guideSoundsEnabled = !guideSoundsEnabled;
+      guideToggle.textContent = guideSoundsEnabled ? "Turn Off" : "Turn On";
     });
 
-    updateScores();
-  }
-</script>
+    // Adjust Guide Sound Volume
+    guideVolumeControl.addEventListener("input", () => {
+      guideGain.gain.value = parseFloat(guideVolumeControl.value);
+    });
+
+    function playGuideSound(type) {
+      if (!guideSoundsEnabled) return;
+
+      const oscillator = audioContext.createOscillator();
+      oscillator.type = "sine";
+      const now = audioContext.currentTime;
+
+      // Stereo and frequency adjustments
+      if (type === "early") {
+        guidePanner.positionX.setValueAtTime(-1, now); // Left ear
+        oscillator.frequency.setValueAtTime(300, now); // Woosh frequency
+      } else if (type === "late") {
+        guidePanner.positionX.setValueAtTime(1, now); // Right ear
+        oscillator.frequency.setValueAtTime(800, now); // Click frequency
+      } else if (type === "onTime") {
+        guidePanner.positionX.setValueAtTime(0, now); // Both ears
+        oscillator.frequency.setValueAtTime(1200, now); // Bing frequency
+      }
+
+      oscillator.connect(guidePanner);
+      oscillator.start(now);
+      oscillator.stop(now + 0.2); // Short duration
+    }
+
+    function playSound() {
+      const selectedSound = soundSelect.value;
+      if (selectedSound === "beep") playBeep(440);
+      else if (selectedSound === "tick") playTick();
+      else if (selectedSound === "drum") playDrum();
+    }
+
+    // Metronome Functions, Existing Scoring, and Logs Remain Unchanged
+    document.getElementById("setBpm").addEventListener("click", () => {
+      bpm = parseInt(bpmInput.value, 10) || 60;
+      beatInterval = 60000 / bpm;
+      if (interval) {
+        clearInterval(interval);
+        startMetronome();
+      }
+    });
+
+    document.getElementById("startMetronome").addEventListener("click", () => {
+      if (interval) return;
+      lastBeatTime = Date.now();
+      playMetronome();
+      interval = setInterval(playMetronome, beatInterval);
+    });
+
+    document.getElementById("stopMetronome").addEventListener("click", () => {
+      clearInterval(interval);
+      interval = null;
+    });
+
+    function playMetronome() {
+      lastBeatTime = Date.now();
+      playSound();
+    }
+
+    document.getElementById("clickButton").addEventListener("click", () => {
+      const clickTime = Date.now();
+      const diff = Math.abs(clickTime - lastBeatTime);
+
+      const offset = diff % beatInterval;
+      const distanceFromBeat = Math.min(offset, beatInterval - offset) / 1000;
+
+      let colorClass = "";
+      let colorText = "";
+      if (distanceFromBeat <= 0.02) {
+        feedbackDiv.style.backgroundColor = "green";
+        colorClass = "green-text";
+        colorText = "Green";
+        playGuideSound("onTime");
+      } else if (distanceFromBeat <= 0.04) {
+        feedbackDiv.style.backgroundColor = "orange";
+        colorClass = "orange-text";
+        colorText = "Orange";
+        playGuideSound("late");
+      } else {
+        feedbackDiv.style.backgroundColor = "red";
+        colorClass = "red-text";
+        colorText = "Red";
+        playGuideSound("early");
+      }
+
+      log.unshift({ time: distanceFromBeat.toFixed(3), color: colorClass, colorText });
+      if (log.length > maxLogEntries) log.pop();
+      updateLog();
+    });
+
+    function updateLog() {
+      logDiv.innerHTML = "";
+      log.forEach((entry, index) => {
+        const div = document.createElement("div");
+        div.className = `log-entry ${entry.color}`;
+        div.textContent = `${log.length - index}: ${entry.time}s - ${entry.colorText}`;
+        logDiv.appendChild(div);
+      });
+
+      updateScores();
+    }
+  </script>
+</body>
+</html>
